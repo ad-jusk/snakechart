@@ -1,5 +1,4 @@
 import { setupD3 } from "./d3";
-import { SnakeProvider } from "./utils/snakeProvider";
 
 document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
   <div>
@@ -7,5 +6,4 @@ document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
   </div>
 `;
 
-await SnakeProvider.getInstance().readCSV("./data/snakes.csv");
 setupD3(document.querySelector<HTMLDivElement>("#container")!);

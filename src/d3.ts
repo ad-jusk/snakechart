@@ -69,7 +69,10 @@ const renderSnakes = (snakes: ReadonlyArray<Snake>) => {
     .text((d) => d.commonName);
 };
 
-export const setupD3 = (container: HTMLDivElement) => {
+export const setupD3 = async (container: HTMLDivElement) => {
+  // READ SNAKE DATA
+  await SnakeProvider.getInstance().readCSV("./data/snakes.csv");
+
   const snakes = SnakeProvider.getInstance().getSnakes();
   setupAxesDomain(snakes);
   renderSnakes(snakes);
