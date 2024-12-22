@@ -1,19 +1,35 @@
 export const viewConstants = {
+  // region ICON
   iconSize: {
     sm: 20,
     md: 30,
     lg: 40,
   },
-  iconColors: {
-    elapidae: "#FF0000",
-    viparidae: "#0000FF",
-  },
   iconViewbox: `0 0 512 512`,
   iconOpacity: 0.6,
-  labelColors: {
-    elapidae: "#AA0000",
-    viparidae: "#0000AA",
+  getSnakeIcon: (family: string) => {
+    switch (family.toLowerCase()) {
+      case "elapidae":
+        return svgPaths.elapidaeIcon;
+      case "viperidae":
+        return svgPaths.viperidaeIcon;
+      default:
+        return "";
+    }
   },
+  getSnakeIconColor: (family: string) => {
+    switch (family.toLowerCase()) {
+      case "elapidae":
+        return "#FF0000";
+      case "viperidae":
+        return "#0000FF";
+      default:
+        return "#000000";
+    }
+  },
+  // endregion ICON
+
+  // region LABEL
   labelDx: {
     sm: 0,
     md: 0,
@@ -25,9 +41,20 @@ export const viewConstants = {
     lg: 47,
   },
   labelFontSize: 8,
+  getSnakeLabelColor: (family: string) => {
+    switch (family.toLowerCase()) {
+      case "elapidae":
+        return "#AA0000";
+      case "viperidae":
+        return "#0000AA";
+      default:
+        return "#000000";
+    }
+  },
+  // endregion LABEL
 };
 
-export const svgPaths = {
+const svgPaths = {
   elapidaeIcon: `<g>
     <path d="M506.705,405.481C509.495,406.787,503.595,403.971,506.705,405.481L506.705,405.481z"></path>
     <path d="M506.705,405.481c-5.599-2.719-21.469,17.541-24.916,20.58c-10.414,9.197-23.086,17.63-37.393,18.465
