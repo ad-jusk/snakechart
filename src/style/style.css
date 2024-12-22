@@ -1,0 +1,22 @@
+@font-face {
+  font-family: "JockeyOne";
+  src: url("/fonts/JockeyOne-Regular.ttf");
+}
+
+* {
+  margin: 0;
+  font-family: "JockeyOne";
+}
+
+#chart {
+  background-color: bisque;
+}
+
+#snakesContainer:hover {
+}
+
+.snakeIcon {
+}
+
+.snakeLabel {
+}

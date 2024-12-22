@@ -1,6 +1,7 @@
 import * as d3 from "d3";
 import { SnakeProvider } from "./utils/snakeProvider";
 import { Snake } from "./types/snakeTypes";
+import { viewConstants, svgPaths } from "./utils/viewConstants";
 
 let chartHeight = 400;
 let chartWidth = 800;
@@ -8,8 +9,10 @@ let chartWidth = 800;
 // CHART SVG
 const chart = d3
   .create("svg")
+  .attr("id", "chart")
   .attr("viewBox", `0 0 ${chartWidth} ${chartHeight}`)
   .attr("preserveAspectRatio", "xMinYMin meet");
+const snakesContainer = chart.append("g").attr("id", "snakesContainer");
 
 // X SCALE
 const xScale = d3.scaleLinear().range([0, chartWidth]);
@@ -47,33 +50,92 @@ const setupAxesDomain = (snakes: ReadonlyArray<Snake>) => {
 };
 
 const renderSnakes = (snakes: ReadonlyArray<Snake>) => {
-  const g = chart.append("g");
+  clearSnakesContainer();
 
-  g.selectAll("rect")
+  snakesContainer
+    .selectAll("svg")
     .data(snakes)
-    .join("rect")
+    .join("svg")
+    .attr("id", (d) => `icon_${d.binomial}`)
+    .attr("class", "snakeIcon")
     .attr("x", (d) => xScale(d.lethalDosage))
     .attr("y", (d) => yScale(d.yield))
-    .attr("fill", (d) => (d.family.startsWith("V") ? "green" : "red"))
-    .attr("opacity", 0.6)
-    .attr("width", (d) => (d.size > 200 ? 40 : d.size > 100 ? 30 : 25))
-    .attr("height", (d) => (d.size > 200 ? 40 : d.size > 100 ? 30 : 25));
+    .attr("width", (d) =>
+      d.size > 200
+        ? viewConstants.iconSize.lg
+        : d.size > 100
+        ? viewConstants.iconSize.md
+        : viewConstants.iconSize.sm
+    )
+    .attr("height", (d) =>
+      d.size > 200
+        ? viewConstants.iconSize.lg
+        : d.size > 100
+        ? viewConstants.iconSize.md
+        : viewConstants.iconSize.sm
+    )
+    .attr("viewBox", viewConstants.iconViewbox)
+    .attr("fill", (d) =>
+      d.family === "Viperidae"
+        ? viewConstants.iconColors.viparidae
+        : viewConstants.iconColors.elapidae
+    )
+    .attr("opacity", viewConstants.iconOpacity)
+    .html((d) =>
+      d.family === "Viperidae" ? svgPaths.viperidaeIcon : svgPaths.elapidaeIcon
+    )
+    .on("mouseover", function (event, d) {
+      d3.select(this).attr("opacity", 1);
+      // Todo: hide near snakes
+    })
+    .on("mouseout", function (event, d) {
+      d3.select(this).attr("opacity", viewConstants.iconOpacity);
+      // Todo: show near snakes
+    });
 
-  g.selectAll("text")
+  snakesContainer
+    .selectAll("text")
     .data(snakes)
     .join("text")
+    .attr("id", (d) => `label_${d.binomial}`)
+    .attr("class", "snakeLabel")
     .attr("x", (d) => xScale(d.lethalDosage))
     .attr("y", (d) => yScale(d.yield))
-    .attr("font-size", "8px")
-    .attr("dy", (d) => (d.size > 200 ? 45 : d.size > 100 ? 35 : 30))
+    .attr("dx", (d) =>
+      d.size > 200
+        ? viewConstants.labelDx.lg
+        : d.size > 100
+        ? viewConstants.labelDx.md
+        : viewConstants.labelDx.sm
+    )
+    .attr("dy", (d) =>
+      d.size > 200
+        ? viewConstants.labelDy.lg
+        : d.size > 100
+        ? viewConstants.labelDy.md
+        : viewConstants.labelDy.sm
+    )
+    .attr("fill", (d) =>
+      d.family === "Viperidae"
+        ? viewConstants.labelColors.viparidae
+        : viewConstants.labelColors.elapidae
+    )
+    .attr("font-size", viewConstants.labelFontSize)
+    .attr("opacity", viewConstants.iconOpacity)
     .text((d) => d.commonName);
 };
 
-export const setupD3 = async (container: HTMLDivElement) => {
-  // READ SNAKE DATA
-  await SnakeProvider.getInstance().readCSV("./data/snakes.csv");
+const clearSnakesContainer = () => {
+  snakesContainer.selectAll("svg").remove();
+  snakesContainer.selectAll("text").remove();
+};
 
-  const snakes = SnakeProvider.getInstance().getSnakes();
+export const setupD3 = async (container: HTMLDivElement) => {
+  const snakeProvider = SnakeProvider.getInstance();
+  // READ SNAKE DATA
+  await snakeProvider.readCSV("./data/snakes.csv");
+  const snakes = snakeProvider.getSnakes();
+
   setupAxesDomain(snakes);
   renderSnakes(snakes);
   container.append(chart.node()!);
