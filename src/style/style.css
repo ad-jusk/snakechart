@@ -8,6 +8,35 @@
   font-family: "JockeyOne";
 }
 
+/* region FILTERS */
+
+#filtersContainer {
+  padding: 5px 5px 0px 5px;
+  font-size: 10px;
+}
+
+#filters {
+  background-color: whitesmoke;
+}
+
+.sliderContainer {
+  display: flex;
+  flex-direction: column;
+  column-gap: 5px;
+  justify-content: center;
+  align-items: center;
+  width: fit-content;
+  height: fit-content;
+}
+
+/* endregion FILTERS */
+
+/* region CHART */
+
+#chartContainer {
+  padding: 0 5px 5px 5px;
+}
+
 #chart {
   background-color: bisque;
 }
@@ -23,3 +52,5 @@
 
 .snakeLabel {
 }
+
+/* endregion CHART */

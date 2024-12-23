@@ -3,8 +3,8 @@ import { SnakeProvider } from "./utils/snakeProvider";
 import { Snake } from "./types/snakeTypes";
 import { viewConstants } from "./utils/viewConstants";
 
-let chartHeight = 410;
-let chartWidth = 820;
+const chartHeight = 410;
+const chartWidth = 820;
 
 // MAX DISTANCE TO CHECK FOR NEAR SNAKE GROUPS
 const opacityReduceDistance = 60;
