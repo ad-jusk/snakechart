@@ -34,6 +34,12 @@ export class SnakeProvider {
     this.snakes = data;
   };
 
+  public getFilteredSnakes = (
+    predicate: (snake: Snake) => boolean
+  ): ReadonlyArray<Snake> => {
+    return this.snakes.filter(predicate);
+  };
+
   public getSnakes = (): ReadonlyArray<Snake> => {
     return this.snakes;
   };

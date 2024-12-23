@@ -2,6 +2,7 @@ import * as d3 from "d3";
 import { SnakeProvider } from "./utils/snakeProvider";
 import { Snake } from "./types/snakeTypes";
 import { viewConstants } from "./utils/viewConstants";
+import { getFilterPredicate } from "./components/filters";
 
 const chartHeight = 410;
 const chartWidth = 820;
@@ -72,7 +73,11 @@ chart
   .attr("dy", 25)
   .text("VENOM YIELD");
 
-const setupAxes = (snakes: ReadonlyArray<Snake>) => {
+const renderAxes = (snakes: ReadonlyArray<Snake>) => {
+  // DELETE AXES IF ALREADY PRESENT
+  chart.select("#x-axis").remove();
+  chart.select("#y-axis").remove();
+
   const maxLethalDose = Math.max(...snakes.map((snake) => snake.lethalDosage));
   const minLethalDose = Math.min(...snakes.map((snake) => snake.lethalDosage));
   const maxYield = Math.max(...snakes.map((snake) => snake.yield));
@@ -103,6 +108,7 @@ const setupAxes = (snakes: ReadonlyArray<Snake>) => {
   // ADD AXES TO CHART
   chart
     .append("g")
+    .attr("id", "x-axis")
     .attr("transform", `translate(0, ${chartHeight / 2})`)
     .call(xAxis)
     .select("path")
@@ -110,6 +116,7 @@ const setupAxes = (snakes: ReadonlyArray<Snake>) => {
     .attr("marker-end", "url(#arrowhead)");
   chart
     .append("g")
+    .attr("id", "y-axis")
     .attr("transform", `translate(${chartWidth / 2}, 0)`)
     .call(yAxis)
     .select("path")
@@ -272,13 +279,17 @@ const clearSnakesContainer = () => {
   snakesContainer.selectAll("g").remove();
 };
 
-export const setupD3 = async (container: HTMLDivElement) => {
-  const snakeProvider = SnakeProvider.getInstance();
-  // READ SNAKE DATA
-  await snakeProvider.readCSV("./data/snakes.csv");
-  const snakes = snakeProvider.getSnakes();
-
-  setupAxes(snakes);
+export const requestChartRender = (
+  filterPredicate: (snake: Snake) => boolean
+) => {
+  const snakes = SnakeProvider.getInstance().getFilteredSnakes(filterPredicate);
+  renderAxes(snakes);
   renderSnakes(snakes);
+};
+
+export const setupD3 = async (container: HTMLDivElement) => {
+  // READ SNAKE DATA
+  await SnakeProvider.getInstance().readCSV("./data/snakes_full.csv");
+  requestChartRender(getFilterPredicate());
   container.append(chart.node()!);
 };

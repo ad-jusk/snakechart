@@ -1,7 +1,24 @@
 import * as d3 from "d3";
+import { requestChartRender } from "../d3";
+import { Filter } from "../types/filterTypes";
+import { Snake } from "../types/snakeTypes";
 
 const filtersHeight = 30;
 const filtersWidth = 820;
+
+const initalMaxYield = 200;
+const initialMaxLethalDosage = 2;
+
+let filterArray: Filter[] = [
+  {
+    name: "yield",
+    condition: (snake) => snake.yield <= initalMaxYield,
+  },
+  {
+    name: "lethalDosage",
+    condition: (snake) => snake.lethalDosage <= initialMaxLethalDosage,
+  },
+];
 
 const filters = d3
   .create("svg")
@@ -18,9 +35,9 @@ filters
   .attr("height", 30).html(`
     <div class="sliderContainer">
       <label>
-        Venom yield range:
+        Max venom yield:
       </label>
-        <input id="yieldSlider" type="range" min="0" max="3000" step="300" value="300">
+        <input id="yieldSlider" type="range" min="10" max="3000" step="1" value=${initalMaxYield}>
     </div>`);
 
 // LD50 SLIDER
@@ -32,18 +49,34 @@ filters
   .attr("height", 30).html(`
     <div class="sliderContainer">
       <label>
-        LD50 range:
+        Max LD50:
       </label>
-        <input id="ld50Slider" type="range" min="0" max="30" step="3" value="3">
+        <input id="ld50Slider" type="range" min="1" max="12" step="1" value=${initialMaxLethalDosage}>
     </div>`);
 
 filters.select("#yieldSlider").on("change", function () {
-  console.log("Yield changed!");
+  const input = this as HTMLInputElement;
+  filterArray = filterArray.filter((filter) => filter.name != "yield");
+  filterArray.push({
+    name: "yield",
+    condition: (snake) => snake.yield <= parseFloat(input.value),
+  });
+  requestChartRender(getFilterPredicate());
 });
 
 filters.select("#ld50Slider").on("change", function () {
-  console.log("LD50 changed!");
+  const input = this as HTMLInputElement;
+  filterArray = filterArray.filter((filter) => filter.name != "lethalDosage");
+  filterArray.push({
+    name: "lethalDosage",
+    condition: (snake) => snake.lethalDosage <= parseFloat(input.value),
+  });
+  requestChartRender(getFilterPredicate());
 });
+
+export const getFilterPredicate =
+  (): ((snake: Snake) => boolean) => (snake: Snake) =>
+    filterArray.every((filter) => filter.condition(snake));
 
 export const setupFilters = (container: HTMLDivElement) => {
   container.append(filters.node()!);

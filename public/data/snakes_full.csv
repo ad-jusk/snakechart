@@ -60,7 +60,6 @@ Viperidae,Vipera aspis,aspic viper,LD50,IV,Mouse,0.78,10,90,front-fanged
 Viperidae,Agkistrodon bilineatus,Mexican cantil,LD50,IV,Mouse,0.8,688,141,front-fanged
 Viperidae,Echis ocellatus,West African carpet viper,LD50,IV,Mouse,0.804,24.8,65,front-fanged
 Viperidae,Bothrops jararaca,Jararaca,LD50,IV,Mouse,0.835,70,240,front-fanged
-Elapidae,Dendroaspis jamesoni,,LD50,IV,Mouse,0.84,120,265,front-fanged
 Viperidae,Hypnale hypnale,hump nosed pitviper,LD50,IV,Mouse,0.9,20,60,front-fanged
 Viperidae,Lachesis muta,Atlantic bushmaster,LD50,IV,Mouse,0.9,411,360,front-fanged
 Viperidae,Crotalus atrox,Western diamondback rattlesnake,LD50,IV,Mouse,0.92,1145,234,front-fanged
@@ -91,6 +90,7 @@ Viperidae,Calloselasma rhodostoma,Malayan pitviper,LD50,IV,Mouse,2.82,60,120,fro
 Viperidae,Cerrophidion sasai,Costa Rica montane pitviper,LD50,IV,Mouse,3.6666,15,71.3,front-fanged
 Viperidae,Porthidium nasutum,rainforest hog nosed pitviper,LD50,IV,Mouse,4.6,25,60,front-fanged
 Viperidae,Cerrophidion godmani,Godman's montane pitviper,LD50,IV,Mouse,4.75,20,82,front-fanged
+Colubridae,Boiga dendrophila,Mangrove snake,LD50,IV,Mouse,4.85,12.5,250,rear-fanged
 Viperidae,Bothriechis lateralis,side striped palm viper,LD50,IV,Mouse,5.144,20,100,front-fanged
 Viperidae,Porthidium ophryomegas,slender hognosed pitviper,LD50,IV,Mouse,6.813,20,80,front-fanged
 Viperidae,Causus rhombeatus,Common Night Adder,LD50,IV,Mouse,10.278,300,101,front-fanged
