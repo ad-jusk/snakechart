@@ -19,13 +19,8 @@ const snakesContainer = chart.append("g").attr("id", "snakesContainer");
 
 // X SCALE
 const xScale = d3.scaleLinear().range([0, chartWidth]);
-
 // Y SCALE
 const yScale = d3.scaleLinear().range([chartHeight, 0]);
-
-// AXES
-const xAxis = d3.axisBottom(xScale).ticks(0).tickSize(0);
-const yAxis = d3.axisLeft(yScale).ticks(0).tickSize(0);
 
 // ADD ARROW HEAD DEF
 chart
@@ -42,24 +37,7 @@ chart
   .attr("d", "M 0 0 L 10 5 L 0 10 Z")
   .attr("fill", "black");
 
-// ADD AXES TO CHART
-chart
-  .append("g")
-  .attr("transform", `translate(0, ${chartHeight / 2})`)
-  .call(xAxis)
-  .select("path")
-  .attr("d", `M${100},10 H${chartWidth}`)
-  .attr("marker-end", "url(#arrowhead)");
-
-chart
-  .append("g")
-  .attr("transform", `translate(${chartWidth / 2}, 0)`)
-  .call(yAxis)
-  .select("path")
-  .attr("d", `M0,${chartHeight} V${30}`)
-  .attr("marker-end", "url(#arrowhead)");
-
-// ADD AXES DESCRIPTIONS
+// AXES DESCRIPTIONS
 const xAxisDescription = chart.append("g");
 xAxisDescription
   .append("text")
@@ -67,7 +45,6 @@ xAxisDescription
   .attr("y", chartHeight / 2)
   .attr("font-size", 24)
   .attr("dx", 12)
-  .attr("dy", 18)
   .text("TOXICITY");
 xAxisDescription
   .append("text")
@@ -75,8 +52,16 @@ xAxisDescription
   .attr("y", chartHeight / 2)
   .attr("font-size", 10)
   .attr("dx", 12)
-  .attr("dy", 30)
-  .text("BASED ON LD50");
+  .attr("dy", 10)
+  .text("BASED ON LD50 IN");
+xAxisDescription
+  .append("svg")
+  .attr("x", 80)
+  .attr("y", chartHeight / 2)
+  .attr("width", 13)
+  .attr("height", 13)
+  .attr("viewBox", viewConstants.iconViewbox)
+  .html(viewConstants.getMouseIcon());
 
 chart
   .append("text")
@@ -85,9 +70,9 @@ chart
   .attr("font-size", 24)
   .attr("text-anchor", "middle")
   .attr("dy", 25)
-  .text("VENOM DOSE");
+  .text("VENOM YIELD");
 
-const setupAxesDomain = (snakes: ReadonlyArray<Snake>) => {
+const setupAxes = (snakes: ReadonlyArray<Snake>) => {
   const maxLethalDose = Math.max(...snakes.map((snake) => snake.lethalDosage));
   const minLethalDose = Math.min(...snakes.map((snake) => snake.lethalDosage));
   const maxYield = Math.max(...snakes.map((snake) => snake.yield));
@@ -99,6 +84,37 @@ const setupAxesDomain = (snakes: ReadonlyArray<Snake>) => {
     minLethalDose - lethalDosePadding,
   ]);
   yScale.domain([minYield - yieldPadding * 2, maxYield + yieldPadding]);
+
+  const xTickValues = xScale.ticks(4).filter((value) => value < maxLethalDose);
+  const yTickValues = yScale
+    .ticks(5)
+    .filter((value) => value < maxYield && value != 400);
+
+  // AXES
+  const xAxis = d3
+    .axisBottom(xScale)
+    .tickValues(xTickValues)
+    .tickFormat((d) => (d === 0 ? "~0,01" : d.toString()));
+  const yAxis = d3
+    .axisLeft(yScale)
+    .tickValues(yTickValues)
+    .tickFormat((d) => (d === 0 ? "~1" : d.toString()));
+
+  // ADD AXES TO CHART
+  chart
+    .append("g")
+    .attr("transform", `translate(0, ${chartHeight / 2})`)
+    .call(xAxis)
+    .select("path")
+    .attr("d", `M${100},0 H${chartWidth}`)
+    .attr("marker-end", "url(#arrowhead)");
+  chart
+    .append("g")
+    .attr("transform", `translate(${chartWidth / 2}, 0)`)
+    .call(yAxis)
+    .select("path")
+    .attr("d", `M0,${chartHeight} V${30}`)
+    .attr("marker-end", "url(#arrowhead)");
 };
 
 const renderSnakes = (snakes: ReadonlyArray<Snake>) => {
@@ -117,11 +133,13 @@ const renderSnakes = (snakes: ReadonlyArray<Snake>) => {
         : snake.size > 100
         ? viewConstants.iconSize.md
         : viewConstants.iconSize.sm;
+    const x = xScale(snake.lethalDosage) - sizeXY / 2;
+    const y = yScale(snake.yield) - sizeXY / 2;
 
     snakeGroup
       .append("rect")
-      .attr("x", xScale(snake.lethalDosage))
-      .attr("y", yScale(snake.yield))
+      .attr("x", x)
+      .attr("y", y)
       .attr("width", sizeXY)
       .attr("height", sizeXY)
       .attr("fill", "none")
@@ -131,8 +149,8 @@ const renderSnakes = (snakes: ReadonlyArray<Snake>) => {
       .append("svg")
       .attr("id", `icon_${snake.binomial}`)
       .attr("class", "snakeIcon")
-      .attr("x", xScale(snake.lethalDosage))
-      .attr("y", yScale(snake.yield))
+      .attr("x", x)
+      .attr("y", y)
       .attr("width", sizeXY)
       .attr("height", sizeXY)
       .attr("viewBox", viewConstants.iconViewbox)
@@ -143,8 +161,8 @@ const renderSnakes = (snakes: ReadonlyArray<Snake>) => {
       .append("text")
       .attr("id", `label_${snake.binomial}`)
       .attr("class", "snakeLabel")
-      .attr("x", xScale(snake.lethalDosage))
-      .attr("y", yScale(snake.yield))
+      .attr("x", x)
+      .attr("y", y)
       .attr(
         "dx",
         snake.size > 200
@@ -260,7 +278,7 @@ export const setupD3 = async (container: HTMLDivElement) => {
   await snakeProvider.readCSV("./data/snakes.csv");
   const snakes = snakeProvider.getSnakes();
 
-  setupAxesDomain(snakes);
+  setupAxes(snakes);
   renderSnakes(snakes);
   container.append(chart.node()!);
 };
