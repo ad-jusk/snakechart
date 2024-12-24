@@ -2,7 +2,7 @@ import * as d3 from "d3";
 import { SnakeProvider } from "./utils/snakeProvider";
 import { Snake } from "./types/snakeTypes";
 import { viewConstants } from "./utils/viewConstants";
-import { getFilterPredicate } from "./components/filters";
+import { getFilterPredicate } from "./components/topBar";
 
 const chartHeight = 410;
 const chartWidth = 820;
@@ -78,12 +78,22 @@ const renderAxes = (snakes: ReadonlyArray<Snake>) => {
   chart.select("#x-axis").remove();
   chart.select("#y-axis").remove();
 
-  const maxLethalDose = Math.max(...snakes.map((snake) => snake.lethalDosage));
-  const minLethalDose = Math.min(...snakes.map((snake) => snake.lethalDosage));
-  const maxYield = Math.max(...snakes.map((snake) => snake.yield));
-  const minYield = Math.min(...snakes.map((snake) => snake.yield));
+  let maxLethalDose = Math.max(...snakes.map((snake) => snake.lethalDosage));
+  let minLethalDose = Math.min(...snakes.map((snake) => snake.lethalDosage));
+  let maxYield = Math.max(...snakes.map((snake) => snake.yield));
+  let minYield = Math.min(...snakes.map((snake) => snake.yield));
   const lethalDosePadding = (maxLethalDose - minLethalDose) * 0.1;
   const yieldPadding = (maxYield - minYield) * 0.1;
+
+  if (maxLethalDose === minLethalDose) {
+    minLethalDose -= 0.1;
+    maxLethalDose += 0.1;
+  }
+  if (minYield === maxYield) {
+    minYield -= 1;
+    maxYield += 1;
+  }
+
   xScale.domain([
     maxLethalDose + lethalDosePadding,
     minLethalDose - lethalDosePadding,
@@ -91,9 +101,7 @@ const renderAxes = (snakes: ReadonlyArray<Snake>) => {
   yScale.domain([minYield - yieldPadding * 2, maxYield + yieldPadding]);
 
   const xTickValues = xScale.ticks(4).filter((value) => value < maxLethalDose);
-  const yTickValues = yScale
-    .ticks(5)
-    .filter((value) => value < maxYield && value != 400);
+  const yTickValues = yScale.ticks(5).filter((value) => value < maxYield);
 
   // AXES
   const xAxis = d3

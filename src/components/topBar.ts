@@ -30,41 +30,41 @@ let filterArray: Filter[] = [
   },
 ];
 
-const filters = d3
+const topBarSvg = d3
   .create("svg")
   .attr("id", "filters")
   .attr("viewBox", `0 0 ${containerWidth} ${containerHeight}`)
   .attr("preserveAspectRatio", "xMinYMin meet");
 
 // YIELD SLIDER
-filters
+topBarSvg
   .append("foreignObject")
   .attr("x", containerWidth - sliderWidth)
-  .attr("y", containerHeight / 2 - sliderHeight / 2)
+  .attr("y", 0)
   .attr("width", sliderWidth)
   .attr("height", sliderHeight).html(`
     <div id="yieldContainer" class="sliderContainer">
       <label id="yieldLabel">
         Max venom yield: ${maxYieldValue}mg
       </label>
-        <input id="yieldSlider" type="range" min="10" max="3000" step="1" value=${maxYieldValue}>
+      <input id="yieldSlider" type="range" min="10" max="3000" step="1" value=${maxYieldValue}>
     </div>`);
 
 // LD50 SLIDER
-filters
+topBarSvg
   .append("foreignObject")
-  .attr("x", containerWidth - 2 * sliderWidth)
-  .attr("y", containerHeight / 2 - sliderHeight / 2)
+  .attr("x", containerWidth - sliderWidth)
+  .attr("y", containerHeight / 2)
   .attr("width", sliderWidth)
   .attr("height", sliderHeight).html(`
     <div id="ld50Container" class="sliderContainer">
       <label id="ld50Label">
         Max LD50: ${maxLethalDosageValue}mg/kg
       </label>
-        <input id="ld50Slider" type="range" min="1" max="12" step="1" value=${maxLethalDosageValue}>
+      <input id="ld50Slider" type="range" min="1" max="12" step="1" value=${maxLethalDosageValue}>
     </div>`);
 
-filters.select("#yieldSlider").on("change", function () {
+topBarSvg.select("#yieldSlider").on("change", function () {
   const input = this as HTMLInputElement;
   filterArray = filterArray.filter((filter) => filter.name != "yield");
   filterArray.push({
@@ -72,13 +72,17 @@ filters.select("#yieldSlider").on("change", function () {
     condition: (snake) => snake.yield <= parseFloat(input.value),
     logic: "and",
   });
-  filters
-    .select("#yieldLabel")
-    .text(`Max venom yield: ${parseFloat(input.value)}mg`);
   requestChartRender(getFilterPredicate());
 });
 
-filters.select("#ld50Slider").on("change", function () {
+topBarSvg.select("#yieldSlider").on("input", function () {
+  const input = this as HTMLInputElement;
+  topBarSvg
+    .select("#yieldLabel")
+    .text(`Max venom yield: ${parseFloat(input.value)}mg`);
+});
+
+topBarSvg.select("#ld50Slider").on("change", function () {
   const input = this as HTMLInputElement;
   filterArray = filterArray.filter((filter) => filter.name != "lethalDosage");
   filterArray.push({
@@ -86,10 +90,14 @@ filters.select("#ld50Slider").on("change", function () {
     condition: (snake) => snake.lethalDosage <= parseFloat(input.value),
     logic: "and",
   });
-  filters
+  requestChartRender(getFilterPredicate());
+});
+
+topBarSvg.select("#ld50Slider").on("input", function () {
+  const input = this as HTMLInputElement;
+  topBarSvg
     .select("#ld50Label")
     .text(`Max LD50: ${parseFloat(input.value)}mg/kg`);
-  requestChartRender(getFilterPredicate());
 });
 
 // FAMILY FILTER
@@ -159,12 +167,19 @@ const addFamily = (family: string, x: number) => {
   );
 };
 
-const families = filters.append("g");
-addFamily("Elapidae", 395);
-addFamily("Viperidae", 430);
-addFamily("Colubridae", 470);
-addFamily("Atractaspididae", 520);
+const families = topBarSvg.append("g");
+addFamily("Elapidae", 515);
+addFamily("Viperidae", 550);
+addFamily("Colubridae", 590);
+addFamily("Atractaspididae", 640);
+families
+  .append("text")
+  .attr("x", 590)
+  .attr("y", 12)
+  .attr("text-anchor", "middle")
+  .text("CHOOSE FAMILY:");
 
+// SIZES EXPLANATION
 const addSize = (
   family: string,
   x: number,
@@ -173,7 +188,6 @@ const addSize = (
   labelDy: number
 ) => {
   const g = sizes.append("g");
-
   g.append("rect")
     .attr("x", x)
     .attr("y", 0)
@@ -200,28 +214,43 @@ const addSize = (
     .text(label);
 };
 
-const sizes = filters.append("g");
+const sizes = topBarSvg.append("g");
 addSize(
   "Elapidae",
-  255,
+  195,
   viewConstants.iconSize.sm,
   "< 100cm",
   viewConstants.labelDy.sm
 );
 addSize(
   "Elapidae",
-  290,
+  230,
   viewConstants.iconSize.md,
   "100cm - 200cm",
   viewConstants.labelDy.md
 );
 addSize(
   "Elapidae",
-  330,
+  270,
   viewConstants.iconSize.lg,
   "> 200cm",
   viewConstants.labelDy.lg
 );
+
+// CHART TITLE
+const titleGroup = topBarSvg.append("g");
+titleGroup
+  .append("text")
+  .attr("x", 0)
+  .attr("y", containerHeight - 22)
+  .attr("font-size", 30)
+  .text("DROPS OF DEATH");
+titleGroup
+  .append("text")
+  .attr("x", 0)
+  .attr("y", containerHeight - 7)
+  .attr("font-size", 14)
+  .text("SNAKE VENOM YIELD AND POTENCY");
 
 export const getFilterPredicate = (): ((snake: Snake) => boolean) => {
   return (snake: Snake) => {
@@ -242,6 +271,6 @@ export const getFilterPredicate = (): ((snake: Snake) => boolean) => {
   };
 };
 
-export const setupFilters = (container: HTMLDivElement) => {
-  container.append(filters.node()!);
+export const setupTopBar = (container: HTMLDivElement) => {
+  container.append(topBarSvg.node()!);
 };
