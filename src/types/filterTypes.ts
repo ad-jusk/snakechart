@@ -1,6 +1,7 @@
 import { Snake } from "./snakeTypes";
 
 export type Filter = {
-  name: "yield" | "lethalDosage" | "family";
+  name: string;
   condition: (snake: Snake) => boolean;
+  logic: "and" | "or";
 };
