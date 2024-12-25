@@ -2,10 +2,14 @@ import * as d3 from "d3";
 import { SnakeProvider } from "./utils/snakeProvider";
 import { Snake } from "./types/snakeTypes";
 import { viewConstants } from "./utils/viewConstants";
-import { getFilterPredicate } from "./components/topBar";
+import {
+  getFilterPredicate,
+  getMaxYieldAndLethalDose,
+} from "./components/topBar";
 
-const chartHeight = 410;
-const chartWidth = 820;
+const chartHeight = 350;
+const chartWidth = 800;
+const xAxisPosition = chartHeight - 20;
 
 // MAX DISTANCE TO CHECK FOR NEAR SNAKE GROUPS
 const opacityReduceDistance = 60;
@@ -43,14 +47,14 @@ const xAxisDescription = chart.append("g");
 xAxisDescription
   .append("text")
   .attr("x", 0)
-  .attr("y", chartHeight / 2)
+  .attr("y", xAxisPosition)
   .attr("font-size", 24)
   .attr("dx", 12)
   .text("TOXICITY");
 xAxisDescription
   .append("text")
   .attr("x", 0)
-  .attr("y", chartHeight / 2)
+  .attr("y", xAxisPosition)
   .attr("font-size", 10)
   .attr("dx", 12)
   .attr("dy", 10)
@@ -58,7 +62,7 @@ xAxisDescription
 xAxisDescription
   .append("svg")
   .attr("x", 80)
-  .attr("y", chartHeight / 2)
+  .attr("y", xAxisPosition + 1)
   .attr("width", 13)
   .attr("height", 13)
   .attr("viewBox", viewConstants.iconViewbox)
@@ -73,51 +77,42 @@ chart
   .attr("dy", 25)
   .text("VENOM YIELD");
 
-const renderAxes = (snakes: ReadonlyArray<Snake>) => {
+const renderAxes = (maxYield: number, maxLethalDose: number) => {
   // DELETE AXES IF ALREADY PRESENT
   chart.select("#x-axis").remove();
   chart.select("#y-axis").remove();
 
-  let maxLethalDose = Math.max(...snakes.map((snake) => snake.lethalDosage));
-  let minLethalDose = Math.min(...snakes.map((snake) => snake.lethalDosage));
-  let maxYield = Math.max(...snakes.map((snake) => snake.yield));
-  let minYield = Math.min(...snakes.map((snake) => snake.yield));
-  const lethalDosePadding = (maxLethalDose - minLethalDose) * 0.1;
-  const yieldPadding = (maxYield - minYield) * 0.1;
-
-  if (maxLethalDose === minLethalDose) {
-    minLethalDose -= 0.1;
-    maxLethalDose += 0.1;
-  }
-  if (minYield === maxYield) {
-    minYield -= 1;
-    maxYield += 1;
-  }
+  const minYield = 0;
+  const minLethalDose = 0;
+  const lethalDosePadding = maxLethalDose * 0.1;
+  const yieldPadding = maxYield * 0.1;
 
   xScale.domain([
     maxLethalDose + lethalDosePadding,
     minLethalDose - lethalDosePadding,
   ]);
-  yScale.domain([minYield - yieldPadding * 2, maxYield + yieldPadding]);
+  yScale
+    .domain([minYield - yieldPadding * 2, maxYield + yieldPadding])
+    .range([xAxisPosition, 30]);
 
-  const xTickValues = xScale.ticks(4).filter((value) => value < maxLethalDose);
-  const yTickValues = yScale.ticks(5).filter((value) => value < maxYield);
+  const xTickValues = xScale.ticks(0);
+  const yTickValues = yScale.ticks(5).filter((t) => t >= 0);
 
   // AXES
   const xAxis = d3
     .axisBottom(xScale)
     .tickValues(xTickValues)
-    .tickFormat((d) => (d === 0 ? "~0,01" : d.toString()));
+    .tickFormat((d) => (d === 0 ? "~0.01" : d.toString()));
   const yAxis = d3
     .axisLeft(yScale)
     .tickValues(yTickValues)
-    .tickFormat((d) => (d === 0 ? "~1" : d.toString()));
+    .tickFormat((d) => (d === 0 ? "~0.01" : d.toString()));
 
   // ADD AXES TO CHART
   chart
     .append("g")
     .attr("id", "x-axis")
-    .attr("transform", `translate(0, ${chartHeight / 2})`)
+    .attr("transform", `translate(0, ${xAxisPosition})`)
     .call(xAxis)
     .select("path")
     .attr("d", `M${100},0 H${chartWidth}`)
@@ -128,7 +123,7 @@ const renderAxes = (snakes: ReadonlyArray<Snake>) => {
     .attr("transform", `translate(${chartWidth / 2}, 0)`)
     .call(yAxis)
     .select("path")
-    .attr("d", `M0,${chartHeight} V${30}`)
+    .attr("d", `M0,${xAxisPosition} V${30}`)
     .attr("marker-end", "url(#arrowhead)");
 };
 
@@ -287,11 +282,32 @@ const clearSnakesContainer = () => {
   snakesContainer.selectAll("g").remove();
 };
 
+const renderLD50Info = (averageLD50: number) => {
+  chart.select("#ld50InfoGroup").remove();
+
+  const g = chart.append("g").attr("id", "ld50InfoGroup");
+  g.append("text")
+    .attr("x", chartWidth / 4)
+    .attr("y", chartHeight)
+    .attr("dy", -3)
+    .attr("text-anchor", "middle")
+    .text(`LD50 > ${averageLD50}mg/kg`);
+
+  g.append("text")
+    .attr("x", chartWidth - chartWidth / 4)
+    .attr("y", chartHeight)
+    .attr("dy", -3)
+    .attr("text-anchor", "middle")
+    .text(`LD50 < ${averageLD50}mg/kg`);
+};
+
 export const requestChartRender = (
   filterPredicate: (snake: Snake) => boolean
 ) => {
   const snakes = SnakeProvider.getInstance().getFilteredSnakes(filterPredicate);
-  renderAxes(snakes);
+  const [maxYield, maxLethalDose] = getMaxYieldAndLethalDose();
+  renderAxes(maxYield, maxLethalDose);
+  renderLD50Info(maxLethalDose / 2);
   renderSnakes(snakes);
 };
 

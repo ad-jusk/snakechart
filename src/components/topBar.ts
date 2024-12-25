@@ -9,8 +9,8 @@ const containerWidth = 820;
 const sliderWidth = 130;
 const sliderHeight = 30;
 
-const maxYieldValue = 200;
-const maxLethalDosageValue = 1;
+let maxYieldValue = 200;
+let maxLethalDosageValue = 1;
 
 let filterArray: Filter[] = [
   {
@@ -72,6 +72,7 @@ topBarSvg.select("#yieldSlider").on("change", function () {
     condition: (snake) => snake.yield <= parseFloat(input.value),
     logic: "and",
   });
+  maxYieldValue = parseFloat(input.value);
   requestChartRender(getFilterPredicate());
 });
 
@@ -90,6 +91,7 @@ topBarSvg.select("#ld50Slider").on("change", function () {
     condition: (snake) => snake.lethalDosage <= parseFloat(input.value),
     logic: "and",
   });
+  maxLethalDosageValue = parseFloat(input.value);
   requestChartRender(getFilterPredicate());
 });
 
@@ -226,7 +228,7 @@ addSize(
   "Elapidae",
   230,
   viewConstants.iconSize.md,
-  "100cm - 200cm",
+  "< 200cm",
   viewConstants.labelDy.md
 );
 addSize(
@@ -269,6 +271,10 @@ export const getFilterPredicate = (): ((snake: Snake) => boolean) => {
 
     return andConditionsMet && orConditionsMet;
   };
+};
+
+export const getMaxYieldAndLethalDose = (): number[] => {
+  return [maxYieldValue, maxLethalDosageValue];
 };
 
 export const setupTopBar = (container: HTMLDivElement) => {
