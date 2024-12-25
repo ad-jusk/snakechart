@@ -91,26 +91,26 @@ const tooltip = chart
 const tooltipBody = tooltip
   .append("xhtml:div")
   .attr("id", "tooltipBody")
-  .style("background-color", "white")
-  .style("box-sizing", "border-box")
-  .style("padding", "11px")
   .style("width", `${tooltipWidth}px`)
   .style("height", `${tooltipHeight}px`)
   .style("max-width", `${tooltipWidth}px`)
-  .style("max-height", `${tooltipHeight}px`)
-  .style("border-radius", "10px")
-  .style("pointer-events", "none")
-  .html(
-    `<div id="tooltipHeader" style="font-size: 10px"></div><div id="tooltipContent"></div>`
-  );
-
-// HIDE TOOLTIP WHEN CURSOR OUT OR ESCAPE PRESSED
-tooltip.on("mouseout", () => hideTooltip());
-d3.select(window).on("keydown", function (event) {
-  if (event.key === "Escape" || event.keyCode === 27) {
-    hideTooltip();
-  }
-});
+  .style("max-height", `${tooltipHeight}px`).html(`
+    <div id="tooltipHeader"></div>
+    <div id="tooltipContent"></div>
+    `);
+const closeTooltipButton = tooltipBody
+  .append("svg")
+  .attr("id", "closeTooltipButton")
+  .attr("width", 8)
+  .attr("height", 8);
+closeTooltipButton.append("path").attr("d", "M 0 0 L 8 8 M 8 0 L 0 8");
+closeTooltipButton
+  .append("rect")
+  .attr("width", 8)
+  .attr("height", 8)
+  .attr("x", 0)
+  .attr("y", 0)
+  .on("click", () => hideTooltip());
 
 const renderAxes = (maxYield: number, maxLethalDose: number) => {
   // DELETE AXES IF ALREADY PRESENT
@@ -174,9 +174,9 @@ const renderSnakes = (snakes: ReadonlyArray<Snake>) => {
       .attr("opacity", viewConstants.iconOpacity);
 
     const sizeXY =
-      snake.size > 200
+      snake.size >= 200
         ? viewConstants.iconSize.lg
-        : snake.size > 100
+        : snake.size >= 100
         ? viewConstants.iconSize.md
         : viewConstants.iconSize.sm;
     const x = xScale(snake.lethalDosage) - sizeXY / 2;
@@ -211,17 +211,17 @@ const renderSnakes = (snakes: ReadonlyArray<Snake>) => {
       .attr("y", y)
       .attr(
         "dx",
-        snake.size > 200
+        snake.size >= 200
           ? viewConstants.labelDx.lg
-          : snake.size > 100
+          : snake.size >= 100
           ? viewConstants.labelDx.md
           : viewConstants.labelDx.sm
       )
       .attr(
         "dy",
-        snake.size > 200
+        snake.size >= 200
           ? viewConstants.labelDy.lg
-          : snake.size > 100
+          : snake.size >= 100
           ? viewConstants.labelDy.md
           : viewConstants.labelDy.sm
       )
@@ -326,12 +326,22 @@ const onSnakeClick = (
   tooltipBody.select("#tooltipHeader").html(`<p>${snake.commonName}</p>`);
 
   tooltipBody.select("#tooltipContent").html(`
-      <p>Binomial: ${snake.binomial}<p>
-      <p>Family: ${snake.family}</p>
-      <p>LD50: ${snake.lethalDosage}mg/kg</p>
-      <p>Venom yield: ${snake.yield}mg</p>
-      <p>Maximum size: ${snake.size}cm</p>
-      <p>Dentition type: ${snake.dentition}</p>
+    <div>
+      <p>Binomial:<p>
+      <p>Family:</p>
+      <p>LD50:</p>
+      <p>Venom yield:</p>
+      <p>Maximum size:</p>
+      <p>Dentition type:</p>
+    </div>
+    <div id="tooltipSnakeData">
+      <p>${snake.binomial}<p>
+      <p>${snake.family}</p>
+      <p>${snake.lethalDosage}mg/kg</p>
+      <p>${snake.yield}mg</p>
+      <p>${snake.size}cm</p>
+      <p>${snake.dentition}</p>
+    </div>
     `);
 };
 

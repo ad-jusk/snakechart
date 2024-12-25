@@ -9,7 +9,7 @@ const containerWidth = 820;
 const sliderWidth = 130;
 const sliderHeight = 30;
 
-let maxYieldValue = 200;
+let maxYieldValue = 100;
 let maxLethalDosageValue = 1;
 
 let filterArray: Filter[] = [
@@ -235,7 +235,7 @@ addSize(
   "Elapidae",
   270,
   viewConstants.iconSize.lg,
-  "> 200cm",
+  ">= 200cm",
   viewConstants.labelDy.lg
 );
 

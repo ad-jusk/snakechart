@@ -25,9 +25,9 @@ html {
   padding: 10px;
 }
 
-/* region FILTERS */
+/* region TOPBAR */
 
-#filtersContainer {
+#topBarContainer {
   margin-bottom: 5px;
   padding-bottom: 5px;
   font-size: 10px;
@@ -47,7 +47,7 @@ html {
   height: fit-content;
 }
 
-/* endregion FILTERS */
+/* endregion TOPBAR */
 
 /* region CHART */
 
@@ -67,6 +67,44 @@ html {
 }
 
 .snakeLabel {
+}
+
+#tooltipBody {
+  background-color: white;
+  box-sizing: border-box;
+  padding: 10px;
+  border-radius: 10px;
+  border: none;
+  position: relative;
+}
+
+#tooltipHeader {
+  font-size: 10px;
+}
+
+#tooltipContent {
+  display: flex;
+  justify-content: space-between;
+}
+
+#tooltipSnakeData {
+  text-align: right;
+}
+
+#closeTooltipButton {
+  position: absolute;
+  top: 5px;
+  right: 10px;
+  cursor: pointer;
+}
+
+#closeTooltipButton > rect {
+  fill: transparent;
+}
+
+#closeTooltipButton > path {
+  stroke: #000000;
+  stroke-width: 2;
 }
 
 /* endregion CHART */
