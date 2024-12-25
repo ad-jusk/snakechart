@@ -10,6 +10,8 @@ import {
 const chartHeight = 350;
 const chartWidth = 800;
 const xAxisPosition = chartHeight - 20;
+const tooltipWidth = 150;
+const tooltipHeight = 100;
 
 // MAX DISTANCE TO CHECK FOR NEAR SNAKE GROUPS
 const opacityReduceDistance = 60;
@@ -67,7 +69,6 @@ xAxisDescription
   .attr("height", 13)
   .attr("viewBox", viewConstants.iconViewbox)
   .html(viewConstants.getMouseIcon());
-
 chart
   .append("text")
   .attr("x", chartWidth / 2)
@@ -76,6 +77,40 @@ chart
   .attr("text-anchor", "middle")
   .attr("dy", 25)
   .text("VENOM YIELD");
+
+// SNAKE TOOLTIP
+const tooltip = chart
+  .append("foreignObject")
+  .attr("id", "snakeTooltip")
+  .attr("x", 0)
+  .attr("y", 0)
+  .attr("width", tooltipWidth)
+  .attr("height", tooltipHeight)
+  .attr("font-size", viewConstants.labelFontSize)
+  .style("visibility", "hidden");
+const tooltipBody = tooltip
+  .append("xhtml:div")
+  .attr("id", "tooltipBody")
+  .style("background-color", "white")
+  .style("box-sizing", "border-box")
+  .style("padding", "11px")
+  .style("width", `${tooltipWidth}px`)
+  .style("height", `${tooltipHeight}px`)
+  .style("max-width", `${tooltipWidth}px`)
+  .style("max-height", `${tooltipHeight}px`)
+  .style("border-radius", "10px")
+  .style("pointer-events", "none")
+  .html(
+    `<div id="tooltipHeader" style="font-size: 10px"></div><div id="tooltipContent"></div>`
+  );
+
+// HIDE TOOLTIP WHEN CURSOR OUT OR ESCAPE PRESSED
+tooltip.on("mouseout", () => hideTooltip());
+d3.select(window).on("keydown", function (event) {
+  if (event.key === "Escape" || event.keyCode === 27) {
+    hideTooltip();
+  }
+});
 
 const renderAxes = (maxYield: number, maxLethalDose: number) => {
   // DELETE AXES IF ALREADY PRESENT
@@ -129,6 +164,7 @@ const renderAxes = (maxYield: number, maxLethalDose: number) => {
 
 const renderSnakes = (snakes: ReadonlyArray<Snake>) => {
   clearSnakesContainer();
+  hideTooltip();
 
   snakes.forEach((snake) => {
     const snakeGroup = snakesContainer
@@ -199,6 +235,9 @@ const renderSnakes = (snakes: ReadonlyArray<Snake>) => {
       })
       .on("mouseout", function () {
         onSnakeMouseOut(this);
+      })
+      .on("click", function () {
+        onSnakeClick(x, y, snake, sizeXY);
       });
   });
 };
@@ -263,6 +302,39 @@ const onSnakeMouseOut = (snakeGroup: SVGGraphicsElement) => {
     .attr("opacity", viewConstants.iconOpacity);
 };
 
+const onSnakeClick = (
+  baseX: number,
+  baseY: number,
+  snake: Snake,
+  snakeIconSize: number
+) => {
+  tooltip.raise();
+
+  const tooltipOffset = 10;
+
+  // DISPLAY TOOLTIP ON THE LEFT AS DEFAULT
+  let x = baseX - tooltipWidth - tooltipOffset;
+  let y = baseY - (tooltipHeight - snakeIconSize) / 2;
+
+  // DISPLAY TOOLTIP ON THE RIGHT IF NO SPACE
+  if (x < 0) {
+    x = baseX + snakeIconSize + tooltipOffset;
+  }
+
+  tooltip.attr("x", x).attr("y", y).style("visibility", "visible");
+
+  tooltipBody.select("#tooltipHeader").html(`<p>${snake.commonName}</p>`);
+
+  tooltipBody.select("#tooltipContent").html(`
+      <p>Binomial: ${snake.binomial}<p>
+      <p>Family: ${snake.family}</p>
+      <p>LD50: ${snake.lethalDosage}mg/kg</p>
+      <p>Venom yield: ${snake.yield}mg</p>
+      <p>Maximum size: ${snake.size}cm</p>
+      <p>Dentition type: ${snake.dentition}</p>
+    `);
+};
+
 const getDistanceBetweenSnakeGroups = (
   snakeGroup1: SVGGraphicsElement,
   snakeGroup2: SVGGraphicsElement
@@ -280,6 +352,10 @@ const getDistanceBetweenSnakeGroups = (
 
 const clearSnakesContainer = () => {
   snakesContainer.selectAll("g").remove();
+};
+
+const hideTooltip = () => {
+  tooltip.style("visibility", "hidden");
 };
 
 const renderLD50Info = (averageLD50: number) => {
