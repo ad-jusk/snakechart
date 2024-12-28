@@ -1,5 +1,6 @@
 import { setupTopBar } from "./components/topBar";
 import { setupD3 } from "./d3";
+import { SnakeProvider } from "./utils/snakeProvider";
 
 document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
   <div>
@@ -8,5 +9,10 @@ document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
   </div>
 `;
 
-setupTopBar(document.querySelector<HTMLDivElement>("#topBarContainer")!);
-setupD3(document.querySelector<HTMLDivElement>("#chartContainer")!);
+const setup = async () => {
+  await SnakeProvider.getInstance().readCSV("./data/snakes_full.csv");
+  setupTopBar(document.querySelector<HTMLDivElement>("#topBarContainer")!);
+  setupD3(document.querySelector<HTMLDivElement>("#chartContainer")!);
+};
+
+setup();

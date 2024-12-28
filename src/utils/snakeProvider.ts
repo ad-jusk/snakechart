@@ -7,12 +7,12 @@ export class SnakeProvider {
 
   private constructor() {}
 
-  public static getInstance = (): SnakeProvider => {
-    if (this.instance == null) {
+  public static getInstance(): SnakeProvider {
+    if (!this.instance) {
       this.instance = new SnakeProvider();
     }
     return this.instance;
-  };
+  }
 
   public readCSV = async (filepath: string) => {
     const data = await csv(filepath, (data) => {
@@ -34,13 +34,27 @@ export class SnakeProvider {
     this.snakes = data;
   };
 
-  public getFilteredSnakes = (
-    predicate: (snake: Snake) => boolean
+  public getSnakes = (
+    predicate: (snake: Snake) => boolean = (_snake) => true,
+    sortedByName: boolean = false
   ): ReadonlyArray<Snake> => {
-    return this.snakes.filter(predicate);
+    const snakes = this.snakes.filter(predicate);
+    if (sortedByName) {
+      return snakes.sort((s1, s2) =>
+        ("" + s1.commonName).localeCompare(s2.commonName)
+      );
+    }
+    return snakes;
   };
 
-  public getSnakes = (): ReadonlyArray<Snake> => {
-    return this.snakes;
+  public getSnakesByPhraseInCommonName = (
+    phrase: string,
+    sortedByName: boolean = false
+  ): ReadonlyArray<Snake> => {
+    const snakes = this.getSnakes(
+      (snake) => snake.commonName.toLowerCase().includes(phrase.toLowerCase()),
+      sortedByName
+    );
+    return snakes;
   };
 }

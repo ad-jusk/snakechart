@@ -34,7 +34,7 @@ html {
   border-bottom: 2px dashed black;
 }
 
-#filters {
+#topBar {
 }
 
 .sliderContainer {
@@ -47,27 +47,62 @@ html {
   height: fit-content;
 }
 
+.snakeFamilySelector:hover {
+  cursor: pointer;
+}
+
+#searchBar {
+  position: relative;
+}
+
+#snakeNameListContainer {
+  position: absolute;
+  background-color: white;
+  border: 1px solid gray;
+  overflow-y: scroll;
+  z-index: 1;
+  height: fit-content;
+  min-width: fit-content;
+  left: 50%;
+  transform: translate(-50%, 0);
+  box-sizing: border-box;
+  padding: 5px;
+  visibility: hidden;
+}
+
+@media (min-width: 400px) {
+  #snakeNameListContainer {
+    font-size: 8px;
+    max-height: 100px;
+  }
+}
+
+@media (min-width: 1000px) {
+  #snakeNameListContainer {
+    font-size: 15px;
+    max-height: 200px;
+  }
+}
+
+@media (min-width: 1440px) {
+  #snakeNameListContainer {
+    font-size: 20px;
+    max-height: 250px;
+  }
+}
+
+#snakeNameListContainer > ul {
+  padding-left: 0;
+  cursor: pointer;
+}
+
+#snakeNameListContainer > ul > li:hover {
+  background-color: #eeeeee;
+}
+
 /* endregion TOPBAR */
 
 /* region CHART */
-
-#chartContainer {
-}
-
-#chart {
-}
-
-#snakesContainer {
-}
-
-.snakeGroup {
-}
-
-.snakeIcon {
-}
-
-.snakeLabel {
-}
 
 #tooltipBody {
   background-color: white;

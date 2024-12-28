@@ -128,7 +128,7 @@ const renderAxes = (maxYield: number, maxLethalDose: number) => {
   ]);
   yScale
     .domain([minYield - yieldPadding * 2, maxYield + yieldPadding])
-    .range([xAxisPosition, 30]);
+    .range([xAxisPosition, 40]);
 
   const xTickValues = xScale.ticks(0);
   const yTickValues = yScale.ticks(5).filter((t) => t >= 0);
@@ -390,7 +390,7 @@ const renderLD50Info = (averageLD50: number) => {
 export const requestChartRender = (
   filterPredicate: (snake: Snake) => boolean
 ) => {
-  const snakes = SnakeProvider.getInstance().getFilteredSnakes(filterPredicate);
+  const snakes = SnakeProvider.getInstance().getSnakes(filterPredicate);
   const [maxYield, maxLethalDose] = getMaxYieldAndLethalDose();
   renderAxes(maxYield, maxLethalDose);
   renderLD50Info(maxLethalDose / 2);
@@ -398,8 +398,6 @@ export const requestChartRender = (
 };
 
 export const setupD3 = async (container: HTMLDivElement) => {
-  // READ SNAKE DATA
-  await SnakeProvider.getInstance().readCSV("./data/snakes_full.csv");
   requestChartRender(getFilterPredicate());
   container.append(chart.node()!);
 };

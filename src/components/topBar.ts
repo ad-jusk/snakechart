@@ -1,38 +1,53 @@
 import * as d3 from "d3";
 import { requestChartRender } from "../d3";
-import { Filter } from "../types/filterTypes";
+import { Filter, SnakeFilterNames } from "../types/filterTypes";
 import { Snake } from "../types/snakeTypes";
 import { viewConstants } from "../utils/viewConstants";
+import { SnakeProvider } from "../utils/snakeProvider";
 
 const containerHeight = 60;
 const containerWidth = 820;
 const sliderWidth = 130;
 const sliderHeight = 30;
+const searchBarWidth = 160;
+const searchBarHeight = 20;
 
 let maxYieldValue = 100;
 let maxLethalDosageValue = 1;
 
-let filterArray: Filter[] = [
+const defaultFilters: ReadonlyArray<Filter> = [
   {
-    name: "yield",
-    condition: (snake) => snake.yield <= maxYieldValue,
+    name: SnakeFilterNames.Yield,
+    condition: (snake) => snake.yield <= 100,
     logic: "and",
   },
   {
-    name: "lethalDosage",
-    condition: (snake) => snake.lethalDosage <= maxLethalDosageValue,
+    name: SnakeFilterNames.LD50,
+    condition: (snake) => snake.lethalDosage <= 1,
     logic: "and",
   },
   {
-    name: "Elapidae",
-    condition: (snake) => snake.family === "Elapidae",
+    name: SnakeFilterNames.Elapidae,
+    condition: (snake) => snake.family === SnakeFilterNames.Elapidae,
     logic: "or",
   },
 ];
+let currentFilters = defaultFilters.slice(0);
+
+const removeFilter = (filterName: string) => {
+  currentFilters = currentFilters.filter(
+    (filter) => filter.name !== filterName
+  );
+};
+
+const addFilter = (filter: Filter) => {
+  removeFilter(filter.name);
+  currentFilters.push(filter);
+};
 
 const topBarSvg = d3
   .create("svg")
-  .attr("id", "filters")
+  .attr("id", "topBar")
   .attr("viewBox", `0 0 ${containerWidth} ${containerHeight}`)
   .attr("preserveAspectRatio", "xMinYMin meet");
 
@@ -66,13 +81,12 @@ topBarSvg
 
 topBarSvg.select("#yieldSlider").on("change", function () {
   const input = this as HTMLInputElement;
-  filterArray = filterArray.filter((filter) => filter.name != "yield");
-  filterArray.push({
-    name: "yield",
+  maxYieldValue = parseFloat(input.value);
+  addFilter({
+    name: SnakeFilterNames.Yield,
     condition: (snake) => snake.yield <= parseFloat(input.value),
     logic: "and",
   });
-  maxYieldValue = parseFloat(input.value);
   requestChartRender(getFilterPredicate());
 });
 
@@ -85,13 +99,12 @@ topBarSvg.select("#yieldSlider").on("input", function () {
 
 topBarSvg.select("#ld50Slider").on("change", function () {
   const input = this as HTMLInputElement;
-  filterArray = filterArray.filter((filter) => filter.name != "lethalDosage");
-  filterArray.push({
-    name: "lethalDosage",
+  maxLethalDosageValue = parseFloat(input.value);
+  addFilter({
+    name: SnakeFilterNames.LD50,
     condition: (snake) => snake.lethalDosage <= parseFloat(input.value),
     logic: "and",
   });
-  maxLethalDosageValue = parseFloat(input.value);
   requestChartRender(getFilterPredicate());
 });
 
@@ -102,22 +115,38 @@ topBarSvg.select("#ld50Slider").on("input", function () {
     .text(`Max LD50: ${parseFloat(input.value)}mg/kg`);
 });
 
-// FAMILY FILTER
-const addFamily = (family: string, x: number) => {
-  const g = families.append("g");
+const disableOrEnableFamilyGroup = (family: string, disable: boolean) => {
+  const g = families.select(`#${family}`);
+  if (disable) {
+    removeFilter(family);
+    g.attr("opacity", 0.3);
+    g.select("svg").attr("fill", "grey");
+    g.select("text").attr("fill", "grey");
+  } else {
+    addFilter({
+      name: family as any,
+      condition: (snake) => snake.family === family,
+      logic: "or",
+    });
+    g.attr("opacity", 1);
+    g.select("svg").attr("fill", viewConstants.getSnakeIconColor(family));
+    g.select("text").attr("fill", viewConstants.getSnakeLabelColor(family));
+  }
+};
 
-  const disableOrEnableFamilyGroup = (disable: boolean) => {
-    if (disable) {
-      filterArray = filterArray.filter((filter) => filter.name != family);
-      g.attr("opacity", 0.3);
-      g.select("svg").attr("fill", "grey");
-      g.select("text").attr("fill", "grey");
-    } else {
-      g.attr("opacity", 1);
-      g.select("svg").attr("fill", viewConstants.getSnakeIconColor(family));
-      g.select("text").attr("fill", viewConstants.getSnakeLabelColor(family));
-    }
-  };
+const disableAllFamilyGroups = () => {
+  disableOrEnableFamilyGroup(SnakeFilterNames.Elapidae, true);
+  disableOrEnableFamilyGroup(SnakeFilterNames.Viperidae, true);
+  disableOrEnableFamilyGroup(SnakeFilterNames.Colubridae, true);
+  disableOrEnableFamilyGroup(SnakeFilterNames.Atractaspididae, true);
+};
+
+const addFamily = (family: string, x: number) => {
+  const g = families
+    .append("g")
+    .attr("class", "snakeFamilySelector")
+    .attr("id", family);
+
   g.append("rect")
     .attr("x", x)
     .attr("y", containerHeight / 2 - viewConstants.iconSize.sm / 2)
@@ -143,37 +172,25 @@ const addFamily = (family: string, x: number) => {
     .attr("dy", -2)
     .text(family);
 
-  g.on("mouseenter", function () {
-    d3.select(this).attr("cursor", "pointer");
-  });
   g.on("click", function () {
-    const containedFilterBeforeClick = filterArray.find(
+    const familyFilterActive = currentFilters.find(
       (filter) => filter.name === family
     );
-    if (containedFilterBeforeClick) {
-      filterArray = filterArray.filter((filter) => filter.name != family);
-      disableOrEnableFamilyGroup(true);
-    } else {
-      filterArray.push({
-        name: family,
-        condition: (snake) => snake.family === family,
-        logic: "or",
-      });
-      disableOrEnableFamilyGroup(false);
-    }
+    disableOrEnableFamilyGroup(family, familyFilterActive !== undefined);
     requestChartRender(getFilterPredicate());
   });
 
   disableOrEnableFamilyGroup(
-    filterArray.find((filter) => filter.name === family) === undefined
+    family,
+    currentFilters.find((filter) => filter.name === family) === undefined
   );
 };
 
 const families = topBarSvg.append("g");
-addFamily("Elapidae", 515);
-addFamily("Viperidae", 550);
-addFamily("Colubridae", 590);
-addFamily("Atractaspididae", 640);
+addFamily(SnakeFilterNames.Elapidae, 515);
+addFamily(SnakeFilterNames.Viperidae, 550);
+addFamily(SnakeFilterNames.Colubridae, 590);
+addFamily(SnakeFilterNames.Atractaspididae, 640);
 families
   .append("text")
   .attr("x", 590)
@@ -181,7 +198,7 @@ families
   .attr("text-anchor", "middle")
   .text("CHOOSE FAMILY:");
 
-// SIZES EXPLANATION
+// SIZES
 const addSize = (
   family: string,
   x: number,
@@ -218,21 +235,21 @@ const addSize = (
 
 const sizes = topBarSvg.append("g");
 addSize(
-  "Elapidae",
+  SnakeFilterNames.Elapidae,
   195,
   viewConstants.iconSize.sm,
   "< 100cm",
   viewConstants.labelDy.sm
 );
 addSize(
-  "Elapidae",
+  SnakeFilterNames.Elapidae,
   230,
   viewConstants.iconSize.md,
   "< 200cm",
   viewConstants.labelDy.md
 );
 addSize(
-  "Elapidae",
+  SnakeFilterNames.Elapidae,
   270,
   viewConstants.iconSize.lg,
   ">= 200cm",
@@ -254,12 +271,114 @@ titleGroup
   .attr("font-size", 14)
   .text("SNAKE VENOM YIELD AND POTENCY");
 
+const matchSlidersToFilters = () => {
+  topBarSvg.select("#ld50Slider").attr("value", maxLethalDosageValue);
+  topBarSvg.select("#yieldSlider").attr("value", maxYieldValue);
+  topBarSvg.select("#ld50Label").text(`Max LD50: ${maxLethalDosageValue}mg/kg`);
+  topBarSvg
+    .select("#yieldLabel")
+    .text(`Max venom yield: ${maxYieldValue}mg/kg`);
+};
+
+// SEARCH BAR
+const searchBar = topBarSvg
+  .append("foreignObject")
+  .attr("id", "searchBar")
+  .attr("x", containerWidth / 2 - searchBarWidth / 2)
+  .attr("y", containerHeight / 2 - searchBarHeight / 2)
+  .attr("height", searchBarHeight)
+  .attr("width", searchBarWidth).html(`
+         <input id="snakeNameTextField" type="text" 
+                placeholder="Search" 
+                style="width: ${searchBarWidth}px; height: ${searchBarHeight}px; box-sizing: border-box;">
+  `);
+const dropdown = d3.create("div").attr("id", "snakeNameListContainer");
+const dropdownList = dropdown.append("ul").attr("id", "snakeNameList");
+
+dropdownList.on("click", function (event) {
+  const li = event.target;
+  const liText = li.textContent || li.innerText;
+  const snake =
+    SnakeProvider.getInstance().getSnakesByPhraseInCommonName(liText)[0];
+
+  if (!snake) {
+    return;
+  }
+
+  maxLethalDosageValue = Math.ceil(parseFloat(snake.lethalDosage.toString()));
+  maxYieldValue = Math.ceil(parseFloat(snake.yield.toString()));
+  const ld50Filter = currentFilters.find(
+    (filter) => filter.name === SnakeFilterNames.LD50
+  );
+  const yieldFilter = currentFilters.find(
+    (filter) => filter.name === SnakeFilterNames.Yield
+  );
+  if (ld50Filter) {
+    ld50Filter.condition = (snake) =>
+      snake.lethalDosage <= maxLethalDosageValue;
+  }
+  if (yieldFilter) {
+    yieldFilter.condition = (snake) => snake.yield <= maxYieldValue;
+  }
+
+  disableAllFamilyGroups();
+  disableOrEnableFamilyGroup(snake.family, false);
+
+  addFilter({
+    name: SnakeFilterNames.CommonName,
+    condition: (s) => s.commonName === snake.commonName,
+    logic: "and",
+  });
+
+  matchSlidersToFilters();
+  dropdown.style("visibility", "hidden");
+  searchBar.select("#snakeNameTextField").property("value", snake.commonName);
+  requestChartRender(getFilterPredicate());
+});
+
+searchBar.select("#snakeNameTextField").on("input", function () {
+  const value = (this as HTMLInputElement).value;
+  const snakes = SnakeProvider.getInstance().getSnakesByPhraseInCommonName(
+    value,
+    true
+  );
+
+  if (value.length === 0) {
+    removeFilter(SnakeFilterNames.CommonName);
+    requestChartRender(getFilterPredicate());
+    dropdown.style("visibility", "hidden");
+    return;
+  }
+
+  if (snakes.length === 0) {
+    dropdown.style("visibility", "hidden");
+    return;
+  }
+
+  dropdownList.selectAll("li").remove();
+  snakes.forEach((snake) => dropdownList.append("li").text(snake.commonName));
+  dropdown.style("visibility", "visible");
+});
+
+const bindDropdownSizeAndPosition = () => {
+  const searchBarElement = topBarSvg.select("#searchBar").node() as HTMLElement;
+  const topBarElement = topBarSvg.node()! as SVGGraphicsElement;
+  if (searchBarElement) {
+    const rect = searchBarElement.getBoundingClientRect();
+    const topBarRect = topBarElement.getBoundingClientRect();
+    dropdown.style("width", `${rect.width}px`);
+    dropdown.style("top", `${topBarRect.height}px`);
+  } else {
+    dropdown.style("width", `${searchBarWidth}px`);
+  }
+};
+
 export const getFilterPredicate = (): ((snake: Snake) => boolean) => {
   return (snake: Snake) => {
     let andConditionsMet = true;
     let orConditionsMet = false;
 
-    filterArray.forEach((filter) => {
+    currentFilters.forEach((filter) => {
       const filterResult = filter.condition(snake);
 
       if (filter.logic === "and") {
@@ -277,6 +396,15 @@ export const getMaxYieldAndLethalDose = (): number[] => {
   return [maxYieldValue, maxLethalDosageValue];
 };
 
+const fillDropdown = () => {
+  const snakes = SnakeProvider.getInstance().getSnakes((_snake) => true, true);
+  snakes.forEach((snake) => dropdownList.append("li").text(snake.commonName));
+};
+
 export const setupTopBar = (container: HTMLDivElement) => {
   container.append(topBarSvg.node()!);
+  container.append(dropdown.node()!);
+  window.addEventListener("resize", bindDropdownSizeAndPosition);
+  bindDropdownSizeAndPosition();
+  fillDropdown();
 };
