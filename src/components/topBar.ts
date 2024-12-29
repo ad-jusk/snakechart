@@ -15,34 +15,37 @@ const searchBarHeight = 20;
 let maxYieldValue = 100;
 let maxLethalDosageValue = 1;
 
-const defaultFilters: ReadonlyArray<Filter> = [
-  {
-    name: SnakeFilterNames.Yield,
-    condition: (snake) => snake.yield <= 100,
-    logic: "and",
-  },
-  {
-    name: SnakeFilterNames.LD50,
-    condition: (snake) => snake.lethalDosage <= 1,
-    logic: "and",
-  },
-  {
-    name: SnakeFilterNames.Elapidae,
-    condition: (snake) => snake.family === SnakeFilterNames.Elapidae,
-    logic: "or",
-  },
-];
-let currentFilters = defaultFilters.slice(0);
+const defaultFilters = new Map<string, Filter>([
+  [
+    SnakeFilterNames.Yield,
+    {
+      condition: (snake: Snake) => snake.yield <= 100,
+      logic: "and",
+    },
+  ],
+  [
+    SnakeFilterNames.LD50,
+    {
+      condition: (snake) => snake.lethalDosage <= 1,
+      logic: "and",
+    },
+  ],
+  [
+    SnakeFilterNames.Elapidae,
+    {
+      condition: (snake) => snake.family === SnakeFilterNames.Elapidae,
+      logic: "or",
+    },
+  ],
+]);
+let currentFilters = new Map(defaultFilters);
 
-const removeFilter = (filterName: string) => {
-  currentFilters = currentFilters.filter(
-    (filter) => filter.name !== filterName
-  );
+const addFilter = (filterName: string, filter: Filter) => {
+  currentFilters.set(filterName, filter);
 };
 
-const addFilter = (filter: Filter) => {
-  removeFilter(filter.name);
-  currentFilters.push(filter);
+const removeFilter = (filterName: string) => {
+  currentFilters.delete(filterName);
 };
 
 const topBarSvg = d3
@@ -62,7 +65,7 @@ topBarSvg
       <label id="yieldLabel">
         Max venom yield: ${maxYieldValue}mg
       </label>
-      <input id="yieldSlider" type="range" min="10" max="3000" step="1" value=${maxYieldValue}>
+      <input id="yieldSlider" type="range" min="10" max="2500" step="1" value=${maxYieldValue}>
     </div>`);
 
 // LD50 SLIDER
@@ -82,8 +85,7 @@ topBarSvg
 topBarSvg.select("#yieldSlider").on("change", function () {
   const input = this as HTMLInputElement;
   maxYieldValue = parseFloat(input.value);
-  addFilter({
-    name: SnakeFilterNames.Yield,
+  addFilter(SnakeFilterNames.Yield, {
     condition: (snake) => snake.yield <= parseFloat(input.value),
     logic: "and",
   });
@@ -100,8 +102,7 @@ topBarSvg.select("#yieldSlider").on("input", function () {
 topBarSvg.select("#ld50Slider").on("change", function () {
   const input = this as HTMLInputElement;
   maxLethalDosageValue = parseFloat(input.value);
-  addFilter({
-    name: SnakeFilterNames.LD50,
+  addFilter(SnakeFilterNames.LD50, {
     condition: (snake) => snake.lethalDosage <= parseFloat(input.value),
     logic: "and",
   });
@@ -123,8 +124,7 @@ const disableOrEnableFamilyGroup = (family: string, disable: boolean) => {
     g.select("svg").attr("fill", "grey");
     g.select("text").attr("fill", "grey");
   } else {
-    addFilter({
-      name: family as any,
+    addFilter(family, {
       condition: (snake) => snake.family === family,
       logic: "or",
     });
@@ -160,7 +160,7 @@ const addFamily = (family: string, x: number) => {
     .attr("y", containerHeight / 2 - viewConstants.iconSize.sm / 2)
     .attr("width", viewConstants.iconSize.sm)
     .attr("height", viewConstants.iconSize.sm)
-    .attr("viewBox", viewConstants.iconViewbox)
+    .attr("viewBox", viewConstants.snakeIconViewbox)
     .attr("fill", viewConstants.getSnakeIconColor(family))
     .html(viewConstants.getSnakeIcon(family));
   g.append("text")
@@ -173,17 +173,12 @@ const addFamily = (family: string, x: number) => {
     .text(family);
 
   g.on("click", function () {
-    const familyFilterActive = currentFilters.find(
-      (filter) => filter.name === family
-    );
+    const familyFilterActive = currentFilters.get(family);
     disableOrEnableFamilyGroup(family, familyFilterActive !== undefined);
     requestChartRender(getFilterPredicate());
   });
 
-  disableOrEnableFamilyGroup(
-    family,
-    currentFilters.find((filter) => filter.name === family) === undefined
-  );
+  disableOrEnableFamilyGroup(family, currentFilters.get(family) === undefined);
 };
 
 const families = topBarSvg.append("g");
@@ -220,7 +215,7 @@ const addSize = (
     .attr("y", containerHeight - iconSize - 15)
     .attr("width", iconSize)
     .attr("height", iconSize)
-    .attr("viewBox", viewConstants.iconViewbox)
+    .attr("viewBox", viewConstants.snakeIconViewbox)
     .attr("fill", "black")
     .html(viewConstants.getSnakeIcon(family));
   g.append("text")
@@ -281,7 +276,8 @@ const matchSlidersToFilters = () => {
 };
 
 // SEARCH BAR
-const searchBar = topBarSvg
+const searchBarGroup = topBarSvg.append("g");
+const searchBar = searchBarGroup
   .append("foreignObject")
   .attr("id", "searchBar")
   .attr("x", containerWidth / 2 - searchBarWidth / 2)
@@ -289,9 +285,46 @@ const searchBar = topBarSvg
   .attr("height", searchBarHeight)
   .attr("width", searchBarWidth).html(`
          <input id="snakeNameTextField" type="text" 
-                placeholder="Search" 
-                style="width: ${searchBarWidth}px; height: ${searchBarHeight}px; box-sizing: border-box;">
+                placeholder="Search snake" 
+                style="width: ${searchBarWidth}px; height: ${searchBarHeight}px;">
   `);
+
+const setRemoveCommonNameFilterGroupVisibility = (visible: boolean) => {
+  removeFilterButtonGroup.style("visibility", visible ? "visible" : "hidden");
+  removeFilterButtonGroup.style("cursor", visible ? "pointer" : "default");
+};
+
+// REMOVE COMMON NAME FILTER BUTTON
+const removeFilterButtonGroup = searchBarGroup
+  .append("g")
+  .attr("id", "removeFilterButtonGroup");
+removeFilterButtonGroup
+  .append("svg")
+  .attr("x", containerWidth / 2 + searchBarWidth / 2 - 9 - 15)
+  .attr("y", containerHeight / 2 - 9)
+  .attr("width", 18)
+  .attr("height", 18)
+  .attr("viewBox", viewConstants.removeIconViewbox)
+  .html(viewConstants.getRemoveIcon());
+removeFilterButtonGroup
+  .append("circle")
+  .attr("id", "removeFilterButton")
+  .attr("cx", containerWidth / 2 + searchBarWidth / 2 - 15)
+  .attr("cy", containerHeight / 2)
+  .attr("r", 8)
+  .on("click", function () {
+    const inputField = searchBar
+      .select("#snakeNameTextField")
+      .node() as HTMLInputElement;
+    inputField.value = "";
+    inputField.focus();
+    removeFilter(SnakeFilterNames.CommonName);
+    setRemoveCommonNameFilterGroupVisibility(false);
+    requestChartRender(getFilterPredicate());
+  });
+setRemoveCommonNameFilterGroupVisibility(false);
+
+// DROPDOWN
 const dropdown = d3.create("div").attr("id", "snakeNameListContainer");
 const dropdownList = dropdown.append("ul").attr("id", "snakeNameList");
 
@@ -307,12 +340,9 @@ dropdownList.on("click", function (event) {
 
   maxLethalDosageValue = Math.ceil(parseFloat(snake.lethalDosage.toString()));
   maxYieldValue = Math.ceil(parseFloat(snake.yield.toString()));
-  const ld50Filter = currentFilters.find(
-    (filter) => filter.name === SnakeFilterNames.LD50
-  );
-  const yieldFilter = currentFilters.find(
-    (filter) => filter.name === SnakeFilterNames.Yield
-  );
+
+  const ld50Filter = currentFilters.get(SnakeFilterNames.LD50);
+  const yieldFilter = currentFilters.get(SnakeFilterNames.Yield);
   if (ld50Filter) {
     ld50Filter.condition = (snake) =>
       snake.lethalDosage <= maxLethalDosageValue;
@@ -321,17 +351,17 @@ dropdownList.on("click", function (event) {
     yieldFilter.condition = (snake) => snake.yield <= maxYieldValue;
   }
 
-  disableAllFamilyGroups();
-  disableOrEnableFamilyGroup(snake.family, false);
-
-  addFilter({
-    name: SnakeFilterNames.CommonName,
+  addFilter(SnakeFilterNames.CommonName, {
     condition: (s) => s.commonName === snake.commonName,
     logic: "and",
   });
 
+  disableAllFamilyGroups();
+  disableOrEnableFamilyGroup(snake.family, false);
   matchSlidersToFilters();
+
   dropdown.style("visibility", "hidden");
+  setRemoveCommonNameFilterGroupVisibility(true);
   searchBar.select("#snakeNameTextField").property("value", snake.commonName);
   requestChartRender(getFilterPredicate());
 });
@@ -357,20 +387,20 @@ searchBar.select("#snakeNameTextField").on("input", function () {
 
   dropdownList.selectAll("li").remove();
   snakes.forEach((snake) => dropdownList.append("li").text(snake.commonName));
+
+  setRemoveCommonNameFilterGroupVisibility(false);
   dropdown.style("visibility", "visible");
 });
 
 const bindDropdownSizeAndPosition = () => {
   const searchBarElement = topBarSvg.select("#searchBar").node() as HTMLElement;
-  const topBarElement = topBarSvg.node()! as SVGGraphicsElement;
-  if (searchBarElement) {
-    const rect = searchBarElement.getBoundingClientRect();
-    const topBarRect = topBarElement.getBoundingClientRect();
-    dropdown.style("width", `${rect.width}px`);
-    dropdown.style("top", `${topBarRect.height}px`);
-  } else {
-    dropdown.style("width", `${searchBarWidth}px`);
-  }
+  const searchBarRect = searchBarElement.getBoundingClientRect();
+  const topOffset = 2;
+  dropdown.style("width", `${searchBarRect.width}px`);
+  dropdown.style(
+    "top",
+    `${searchBarRect.y + searchBarRect.height + topOffset}px`
+  );
 };
 
 export const getFilterPredicate = (): ((snake: Snake) => boolean) => {

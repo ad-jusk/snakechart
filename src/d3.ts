@@ -67,7 +67,7 @@ xAxisDescription
   .attr("y", xAxisPosition + 1)
   .attr("width", 13)
   .attr("height", 13)
-  .attr("viewBox", viewConstants.iconViewbox)
+  .attr("viewBox", viewConstants.snakeIconViewbox)
   .html(viewConstants.getMouseIcon());
 chart
   .append("text")
@@ -199,7 +199,7 @@ const renderSnakes = (snakes: ReadonlyArray<Snake>) => {
       .attr("y", y)
       .attr("width", sizeXY)
       .attr("height", sizeXY)
-      .attr("viewBox", viewConstants.iconViewbox)
+      .attr("viewBox", viewConstants.snakeIconViewbox)
       .attr("fill", viewConstants.getSnakeIconColor(snake.family))
       .html(viewConstants.getSnakeIcon(snake.family));
 

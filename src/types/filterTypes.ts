@@ -11,7 +11,6 @@ export const SnakeFilterNames = {
 } as const;
 
 export type Filter = {
-  name: keyof typeof SnakeFilterNames;
   condition: (snake: Snake) => boolean;
   logic: "and" | "or";
 };
