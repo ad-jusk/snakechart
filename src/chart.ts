@@ -35,10 +35,10 @@ chart
   .append("marker")
   .attr("id", "arrowhead")
   .attr("viewBox", "0 0 10 10")
-  .attr("refX", 10)
+  .attr("refX", 5)
   .attr("refY", 5)
-  .attr("markerWidth", 10)
-  .attr("markerHeight", 10)
+  .attr("markerWidth", 8)
+  .attr("markerHeight", 8)
   .attr("orient", "auto")
   .append("path")
   .attr("d", "M 0 0 L 10 5 L 0 10 Z")
@@ -67,7 +67,7 @@ xAxisDescription
   .attr("y", xAxisPosition + 1)
   .attr("width", 13)
   .attr("height", 13)
-  .attr("viewBox", viewConstants.snakeIconViewbox)
+  .attr("viewBox", viewConstants.viewBox512x512)
   .html(viewConstants.getMouseIcon());
 chart
   .append("text")
@@ -112,6 +112,67 @@ closeTooltipButton
   .attr("y", 0)
   .on("click", () => hideTooltip());
 
+// CLICK EXPLANATION
+const snakeClickExplanation = chart
+  .append("g")
+  .attr("id", "snakeClickExplanation")
+  .attr("transform", `translate(70, 150)`);
+snakeClickExplanation
+  .append("text")
+  .attr("dx", 40)
+  .attr("dy", -40)
+  .attr("font-size", 14)
+  .text("Click for more info!");
+snakeClickExplanation
+  .append("path")
+  .attr("transform", `rotate(-20)`)
+  .attr("stroke", "black")
+  .attr("d", `M${155},0 H${200}`)
+  .attr("marker-end", "url(#arrowhead)");
+
+// HELP
+const handleHelpClick = () => {
+  const x = 25;
+  const y = 0;
+
+  tooltip.raise();
+  tooltip.attr("x", x).attr("y", y).style("visibility", "visible");
+
+  tooltipBody.select("#tooltipHeader").html("");
+  tooltipBody.select("#tooltipContent").html(
+    `<div id="helpContainer">
+      <h3>Terminology:</h3>
+      <p>LD50 - amount of venom required to kill half of the test population. Smaller amount means more potent venom.</p>
+      <p>Venom yield - amount of dryweight venom that the snake injects in a single bite.</p>
+      <h3>About:</h3>
+      <p>This chart presents venomous snakes whose venom was tested on mice. It does not contain all the snakes in the world since the venom can be tested on other animals. That gives completely different LD50 values.</p>
+      <h3>How to use:</h3>
+      <p>You can choose the snake family that interests you. Simply click on one of the icons at the top. Max yield and LD50 sliders adjust the axes of the chart to match the specified value. Bigger values will make more snakes appear on the chart. You can also search specific snake by typing its name in the search box.</p>
+      <h3>Data acquired from:</h3>
+      <a href="https://snakedb.org/pages/index.php" target="blank">SnakeDB</a>
+      </div>`
+  );
+};
+
+const help = chart.append("g").attr("id", "help");
+help
+  .append("svg")
+  .attr("viewBox", viewConstants.viewBox24x24)
+  .attr("width", 20)
+  .attr("height", 20)
+  .attr("fill", "none")
+  .html(viewConstants.getHelpIcon());
+help
+  .append("circle")
+  .attr("cx", 10)
+  .attr("cy", 10)
+  .attr("r", 10)
+  .attr("fill", "none")
+  .attr("border", "black")
+  .attr("cursor", "pointer")
+  .attr("pointer-events", "all");
+help.on("click", handleHelpClick);
+
 const renderAxes = (maxYield: number, maxLethalDose: number) => {
   // DELETE AXES IF ALREADY PRESENT
   chart.select("#x-axis").remove();
@@ -150,7 +211,7 @@ const renderAxes = (maxYield: number, maxLethalDose: number) => {
     .attr("transform", `translate(0, ${xAxisPosition})`)
     .call(xAxis)
     .select("path")
-    .attr("d", `M${100},0 H${chartWidth}`)
+    .attr("d", `M${100},0 H${chartWidth - 5}`)
     .attr("marker-end", "url(#arrowhead)");
   chart
     .append("g")
@@ -158,7 +219,7 @@ const renderAxes = (maxYield: number, maxLethalDose: number) => {
     .attr("transform", `translate(${chartWidth / 2}, 0)`)
     .call(yAxis)
     .select("path")
-    .attr("d", `M0,${xAxisPosition} V${30}`)
+    .attr("d", `M0,${xAxisPosition} V${35}`)
     .attr("marker-end", "url(#arrowhead)");
 };
 
@@ -199,7 +260,7 @@ const renderSnakes = (snakes: ReadonlyArray<Snake>) => {
       .attr("y", y)
       .attr("width", sizeXY)
       .attr("height", sizeXY)
-      .attr("viewBox", viewConstants.snakeIconViewbox)
+      .attr("viewBox", viewConstants.viewBox512x512)
       .attr("fill", viewConstants.getSnakeIconColor(snake.family))
       .html(viewConstants.getSnakeIcon(snake.family));
 
@@ -308,6 +369,8 @@ const onSnakeClick = (
   snake: Snake,
   snakeIconSize: number
 ) => {
+  removeClickExplanation();
+
   tooltip.raise();
 
   const tooltipOffset = 10;
@@ -361,11 +424,21 @@ const getDistanceBetweenSnakeGroups = (
 };
 
 const clearSnakesContainer = () => {
-  snakesContainer.selectAll("g").remove();
+  const snakeIcons = snakesContainer.selectAll("g");
+  if (snakeIcons.size() > 0) {
+    removeClickExplanation();
+  }
+  snakeIcons.remove();
 };
 
 const hideTooltip = () => {
   tooltip.style("visibility", "hidden");
+};
+
+const removeClickExplanation = () => {
+  if (chart.select("#snakeClickExplanation")) {
+    snakeClickExplanation.remove();
+  }
 };
 
 const renderLD50Info = (averageLD50: number) => {

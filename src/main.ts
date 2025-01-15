@@ -1,5 +1,5 @@
 import { setupTopBar } from "./components/topBar";
-import { setupD3 } from "./d3";
+import { setupD3 } from "./chart";
 import { SnakeProvider } from "./utils/snakeProvider";
 
 document.querySelector<HTMLDivElement>("#app")!.innerHTML = `

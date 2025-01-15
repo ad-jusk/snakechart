@@ -1,5 +1,5 @@
 import * as d3 from "d3";
-import { requestChartRender } from "../d3";
+import { requestChartRender } from "../chart";
 import { Filter, SnakeFilterNames } from "../types/filterTypes";
 import { Snake } from "../types/snakeTypes";
 import { viewConstants } from "../utils/viewConstants";
@@ -160,7 +160,7 @@ const addFamily = (family: string, x: number) => {
     .attr("y", containerHeight / 2 - viewConstants.iconSize.sm / 2)
     .attr("width", viewConstants.iconSize.sm)
     .attr("height", viewConstants.iconSize.sm)
-    .attr("viewBox", viewConstants.snakeIconViewbox)
+    .attr("viewBox", viewConstants.viewBox512x512)
     .attr("fill", viewConstants.getSnakeIconColor(family))
     .html(viewConstants.getSnakeIcon(family));
   g.append("text")
@@ -215,7 +215,7 @@ const addSize = (
     .attr("y", containerHeight - iconSize - 15)
     .attr("width", iconSize)
     .attr("height", iconSize)
-    .attr("viewBox", viewConstants.snakeIconViewbox)
+    .attr("viewBox", viewConstants.viewBox512x512)
     .attr("fill", "black")
     .html(viewConstants.getSnakeIcon(family));
   g.append("text")
@@ -304,7 +304,7 @@ removeFilterButtonGroup
   .attr("y", containerHeight / 2 - 9)
   .attr("width", 18)
   .attr("height", 18)
-  .attr("viewBox", viewConstants.removeIconViewbox)
+  .attr("viewBox", viewConstants.viewBox1024x1024)
   .html(viewConstants.getRemoveIcon());
 removeFilterButtonGroup
   .append("circle")
